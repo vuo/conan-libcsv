@@ -1,5 +1,4 @@
 from conans import ConanFile, tools, AutoToolsBuildEnvironment
-# import shutil
 import os
 
 class LibcsvConan(ConanFile):
@@ -30,8 +29,6 @@ class LibcsvConan(ConanFile):
                                       '--disable-static',
                                       '--prefix=%s' % os.getcwd()])
             autotools.make(args=['install'])
-            # libusb calls itself 1.0.0 regardless of the actual release version.
-            # shutil.move('lib/libusb-1.0.0.dylib', 'lib/libusb.dylib')
 
     def package(self):
         self.copy('*.h', src='%s/include' % self.build_dir, dst='include')
