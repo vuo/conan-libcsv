@@ -13,8 +13,7 @@ class LibcsvConan(ConanFile):
 
     def source(self):
         tools.get('https://sourceforge.net/projects/libcsv/files/libcsv/libcsv-%s/libcsv-%s.tar.gz' % (self.version, self.version),
-                  # sha256='d9c0431cb803ceb9896ce74f683e6e5a0954e96ae1d9e4028d6e0f967bebd7e4'
-                  )
+                  sha256='d9c0431cb803ceb9896ce74f683e6e5a0954e96ae1d9e4028d6e0f967bebd7e4')
 
     def build(self):
         tools.mkdir(self.build_dir)
