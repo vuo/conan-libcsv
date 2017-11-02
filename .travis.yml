@@ -6,6 +6,9 @@ language: cpp
 compiler:
     - clang
 
-script:
+install:
     - pip install conan
+    - conan config install https://vuo.org/sites/default/files/conan-macos.zip
+
+script:
     - conan create vuo/stable
