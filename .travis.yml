@@ -1,6 +1,11 @@
 os:
-  - osx
+    - osx
 osx_image: xcode6.4
 
+language: cpp
+compiler:
+    - clang
+
 script:
-  - conan create vuo/stable
+    - pip install conan
+    - conan create vuo/stable
