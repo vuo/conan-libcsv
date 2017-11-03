@@ -7,7 +7,7 @@ compiler:
     - clang
 
 before_install:
-    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update && travis_wait brew install conan qbs ; fi
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update && travis_wait brew install --force-bottle conan qbs ; fi
 
 install:
     - conan config install https://vuo.org/sites/default/files/conan-macos.zip
