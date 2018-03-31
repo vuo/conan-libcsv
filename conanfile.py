@@ -1,5 +1,6 @@
 from conans import ConanFile, tools, AutoToolsBuildEnvironment
 import os
+import platform
 
 class LibcsvConan(ConanFile):
     name = 'libcsv'
@@ -8,12 +9,19 @@ class LibcsvConan(ConanFile):
     package_version = '3'
     version = '%s-%s' % (source_version, package_version)
 
+    requires = 'llvm/3.3-2@vuo/stable'
     settings = 'os', 'compiler', 'build_type', 'arch'
     url = 'https://github.com/vuo/conan-libcsv'
     license = 'https://sourceforge.net/projects/libcsv/'
     description = 'A library for reading and writing comma-separated data files'
     source_dir = 'libcsv-%s' % source_version
     build_dir = '_build'
+
+    def requirements(self):
+        if platform.system() == 'Linux':
+            self.requires('patchelf/0.9@vuo/stable')
+        elif platform.system() != 'Darwin':
+            raise Exception('Unknown platform "%s"' % platform.system())
 
     def source(self):
         tools.get('https://sourceforge.net/projects/libcsv/files/libcsv/libcsv-%s/libcsv-%s.tar.gz' % (self.source_version, self.source_version),
@@ -25,19 +33,43 @@ class LibcsvConan(ConanFile):
         tools.mkdir(self.build_dir)
         with tools.chdir(self.build_dir):
             autotools = AutoToolsBuildEnvironment(self)
-            autotools.cxx_flags.append('-Oz')
-            autotools.cxx_flags.append('-mmacosx-version-min=10.10')
-            autotools.link_flags.append('-Wl,-install_name,@rpath/libcsv.dylib')
-            autotools.configure(configure_dir='../%s' % self.source_dir,
-                                args=['--quiet',
-                                      '--enable-shared',
-                                      '--disable-static',
-                                      '--prefix=%s' % os.getcwd()])
-            autotools.make(args=['install'])
+
+            # The LLVM/Clang libs get automatically added by the `requires` line,
+            # but this package doesn't need to link with them.
+            autotools.libs = []
+
+            autotools.flags.append('-Oz')
+            autotools.flags.append('-Wno-error')
+
+            if platform.system() == 'Darwin':
+                autotools.flags.append('-mmacosx-version-min=10.10')
+                autotools.link_flags.append('-Wl,-headerpad_max_install_names')
+                autotools.link_flags.append('-Wl,-install_name,@rpath/libcsv.dylib')
+
+            env_vars = {
+                'CC' : self.deps_cpp_info['llvm'].rootpath + '/bin/clang',
+                'CXX': self.deps_cpp_info['llvm'].rootpath + '/bin/clang++',
+            }
+            with tools.environment_append(env_vars):
+                autotools.configure(configure_dir='../%s' % self.source_dir,
+                                    args=['--quiet',
+                                          '--enable-shared',
+                                          '--disable-static',
+                                          '--prefix=%s' % os.getcwd()])
+                autotools.make(args=['install'])
+
+            if platform.system() == 'Linux':
+                patchelf = self.deps_cpp_info['patchelf'].rootpath + '/bin/patchelf'
+                self.run('%s --set-soname libcsv.so lib/libcsv.so' % patchelf)
 
     def package(self):
+        if platform.system() == 'Darwin':
+            libext = 'dylib'
+        elif platform.system() == 'Linux':
+            libext = 'so'
+
         self.copy('*.h', src='%s/include' % self.build_dir, dst='include')
-        self.copy('libcsv.dylib', src='%s/lib' % self.build_dir, dst='lib')
+        self.copy('libcsv.%s' % libext, src='%s/lib' % self.build_dir, dst='lib')
 
         self.copy('%s.txt' % self.name, src=self.source_dir, dst='license')
 
