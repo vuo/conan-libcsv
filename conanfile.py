@@ -19,6 +19,8 @@ class LibcsvConan(ConanFile):
         tools.get('https://sourceforge.net/projects/libcsv/files/libcsv/libcsv-%s/libcsv-%s.tar.gz' % (self.source_version, self.source_version),
                   sha256='d9c0431cb803ceb9896ce74f683e6e5a0954e96ae1d9e4028d6e0f967bebd7e4')
 
+        self.run('mv %s/COPYING.LESSER %s/%s.txt' % (self.source_dir, self.source_dir, self.name))
+
     def build(self):
         tools.mkdir(self.build_dir)
         with tools.chdir(self.build_dir):
@@ -36,6 +38,8 @@ class LibcsvConan(ConanFile):
     def package(self):
         self.copy('*.h', src='%s/include' % self.build_dir, dst='include')
         self.copy('libcsv.dylib', src='%s/lib' % self.build_dir, dst='lib')
+
+        self.copy('%s.txt' % self.name, src=self.source_dir, dst='license')
 
     def package_info(self):
         self.cpp_info.libs = ['csv']
